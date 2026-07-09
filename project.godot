@@ -6,31 +6,26 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
+config_version=5
 
 [application]
 
 config/name="TMS Aphasia"
 run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.7")
 config/icon="res://icon.png"
 
 [display]
 
-window/size/fullscreen=true
 window/stretch/mode="2d"
-window/stretch/aspect="keep"
+window/size/fullscreen=true
 
 [input]
 
 ui_select={
 "deadzone": 0.5,
-"events": [ Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":3,"pressure":0.0,"pressed":false,"script":null)
- ]
-}
-ui_advance={
-"deadzone": 0.5,
-"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":32,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
- ]
+"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":3,"pressure":0.0,"pressed":false,"script":null)
+]
 }
 
 [physics]
