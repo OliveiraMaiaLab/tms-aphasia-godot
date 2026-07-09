@@ -6,7 +6,7 @@ extends Node2D
 # Logging
 # --------------------------------------------------------------------------
 const LOG_TAG := "[StimulusTask]"   # prefix on every log line
-const VERBOSE_FILE_SCAN := false    # true = log every file/folder scanned (noisy)
+const VERBOSE_FILE_SCAN := false    # true = log every manifest entry loaded (noisy)
 
 func _log(message: String) -> void:
 	print("%s %s" % [LOG_TAG, message])
@@ -34,8 +34,9 @@ var success = true
 var rsp_freeze_time = 0.5                  # time in s
 var image_presentation_max_duration = 20   # time in s
 var interblock_time = 20                   # time in s
-var block_duration = 10                    # time in min
+var block_duration = 2                     # time in min
 var rsp_freeze = true       # true = ignore input (freeze period after image appears)
+var change_image = false    # set but not read elsewhere - check before relying on it
 var block1 = true           # true = block 1 (objects), false = block 2 (actions)
 var interblock_timer: Timer
 var block_timer: Timer
@@ -43,7 +44,6 @@ var image_presentation_timer: Timer
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	print("[Info] Godot app started")
 	get_parent().get_node("main_menu/start_button").pressed.connect(_on_start_press)
 	hide_interblock()
 	hide_stimuli()
@@ -54,6 +54,7 @@ func _ready():
 func hide_menu():
 	get_parent().get_node("main_menu/start_button").disabled = true
 	get_parent().get_node("main_menu").visible = false
+	visible = true
 
 func show_menu():
 	# show menu node and activate button
@@ -72,17 +73,19 @@ func show_interblock():
 
 func hide_stimuli():
 	# hide stimuli node
+	visible = false
 	$Sprite.visible = false
 
 func show_stimuli():
 	# show stimuli node
+	visible = true
 	$Sprite.visible = true
 # ==================================================================================================
 # 										Timer functions
 # --------------------------------------------------------------------------------------------------
 func start_interblock_timer() -> void:
 	# countdown between block 1 (objects) and block 2 (actions)
-	print("[INFO] Starting inter-block timer (%ds)" % interblock_time)
+	_log("Starting inter-block timer (%ds)" % interblock_time)
 	interblock_timer = Timer.new()
 	interblock_timer.wait_time = interblock_time
 	interblock_timer.timeout.connect(_on_interblock_timout)
@@ -92,7 +95,7 @@ func start_interblock_timer() -> void:
 
 func start_block_timer() -> void:
 	# overall time limit for the current block
-	print("[INFO] Starting block timer (%s min)" % str(block_duration))
+	_log("Starting block timer (%s min)" % str(block_duration))
 	block_timer = Timer.new()
 	block_timer.wait_time = block_duration * 60
 	block_timer.timeout.connect(_on_block_timout)
@@ -113,10 +116,11 @@ func freeze_change() -> void:
 	# ignore input briefly so a leftover key press isn't scored as this trial's response
 	await get_tree().create_timer(rsp_freeze_time).timeout
 	rsp_freeze = false
+	change_image = true
 
 # Timer signals
 func _on_interblock_timout():
-	print("[INFO] Inter-block interval finished - starting block 2 (actions)")
+	_log("Inter-block interval finished - starting block 2 (actions)")
 	start_block_timer()
 	hide_menu()
 	hide_interblock()
@@ -126,7 +130,7 @@ func _on_interblock_timout():
 	show_stimuli()
 
 func _on_block_timout():
-	print("[INFO] Block timer expired - ending %s" % ("block 1 (objects)" if block1 else "block 2 (actions)"))
+	_log("Block timer expired - ending %s" % ("block 1 (objects)" if block1 else "block 2 (actions)"))
 	success = false
 	push_answers()
 	save(answers)
@@ -151,44 +155,32 @@ func _image_presentation_timout():
 # 											Get Image Paths
 # --------------------------------------------------------------------------------------------------
 func get_dir_contents(path: String) -> Array:
-	# recursively collect every non-".import" file under path
-	var files = []
-	var directories = []
-	var dir = DirAccess.open(path)
-	if dir:
-		dir.include_navigational = false
-		dir.include_hidden = true
-		dir.list_dir_begin()
-		_add_dir_contents(dir, files, directories)
-		_log("Found %d stimulus file(s) in '%s'" % [files.size(), path])
-		if files.is_empty():
-			push_warning("%s No stimulus files found in '%s' - check the folder path and difficulty setting." % [LOG_TAG, path])
-	else:
-		push_error("%s Could not open stimuli folder '%s' (error %d)" % [LOG_TAG, path, DirAccess.get_open_error()])
+	# reads a pre-generated manifest.json instead of scanning the folder at runtime -
+	# DirAccess can't reliably list imported images in exported builds. Regenerate
+	# manifests with tools/generate_stimuli_manifests.py whenever stimuli change.
+	var manifest_path = path + "manifest.json"
+	if not FileAccess.file_exists(manifest_path):
+		push_error("%s No manifest at '%s' - run generate_stimuli_manifests.py" % [LOG_TAG, manifest_path])
+		return []
+	var file = FileAccess.open(manifest_path, FileAccess.READ)
+	if file == null:
+		push_error("%s Could not open manifest '%s' (error %d)" % [LOG_TAG, manifest_path, FileAccess.get_open_error()])
+		return []
+	var parsed = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not (parsed is Array):
+		push_error("%s Manifest '%s' is not a JSON array" % [LOG_TAG, manifest_path])
+		return []
+	var files: Array = []
+	for relative_path in parsed:
+		var full_path = path + String(relative_path)
+		files.append(full_path)
+		if VERBOSE_FILE_SCAN:
+			_log("  manifest entry: %s" % full_path)
+	_log("Loaded %d stimulus file(s) from '%s'" % [files.size(), manifest_path])
+	if files.is_empty():
+		push_warning("%s Manifest '%s' is empty - check the folder path and difficulty setting." % [LOG_TAG, manifest_path])
 	return files
-
-func _add_dir_contents(dir: DirAccess, files: Array, directories: Array):
-	# one directory level per call, so subfolders recurse with their own DirAccess
-	var file_name = dir.get_next()
-	while file_name != "":
-		var path = dir.get_current_dir() + "/" + file_name
-		if dir.current_is_dir():
-			if VERBOSE_FILE_SCAN:
-				_log("  entering directory: %s" % path)
-			var sub_dir = DirAccess.open(path)
-			if sub_dir:
-				sub_dir.include_navigational = false
-				sub_dir.include_hidden = true
-				sub_dir.list_dir_begin()
-				directories.append(path)
-				_add_dir_contents(sub_dir, files, directories)
-		else:
-			if not (".import" in path):
-				if VERBOSE_FILE_SCAN:
-					_log("  found file: %s" % path)
-				files.append(path)
-		file_name = dir.get_next()
-	dir.list_dir_end()
 
 func start_block_images():
 	# point image_paths at the current block's folder (objects/actions x difficulty)
@@ -201,26 +193,16 @@ func start_block_images():
 # 											Change Images
 # --------------------------------------------------------------------------------------------------
 func load_texture(path: String) -> void:
-	# load + decode an image file and display it, logging on any failure
-	var tex_file = FileAccess.open(path, FileAccess.READ)
-	if tex_file == null:
-		push_error("%s Could not open image '%s' (error %d)" % [LOG_TAG, path, FileAccess.get_open_error()])
+	# ResourceLoader (not FileAccess) so imported textures resolve correctly in exported builds -
+	# see https://docs.godotengine.org/en/stable/classes/class_resourceloader.html
+	if not ResourceLoader.exists(path):
+		push_error("%s Resource not found: '%s'" % [LOG_TAG, path])
 		return
-	var bytes = tex_file.get_buffer(tex_file.get_length())
-	var img = Image.new()
-	var decode_err := OK
-	if "png" in path:
-		decode_err = img.load_png_from_buffer(bytes)
-	elif "jpg" in path:
-		decode_err = img.load_jpg_from_buffer(bytes)
-	else:
-		push_warning("%s Unrecognized image extension for '%s' - expected .png or .jpg" % [LOG_TAG, path])
-	tex_file.close()
-	if decode_err != OK:
-		push_error("%s Failed to decode image '%s' (error %d)" % [LOG_TAG, path, decode_err])
+	var resource = ResourceLoader.load(path)
+	if resource == null or not (resource is Texture2D):
+		push_error("%s Failed to load texture: '%s'" % [LOG_TAG, path])
 		return
-	var imgtex = ImageTexture.create_from_image(img)
-	$Sprite.texture = imgtex
+	$Sprite.texture = resource
 	_log("Loaded stimulus image: %s" % path)
 
 func _change_texture():
@@ -240,7 +222,7 @@ func change_texture():
 	if image_paths.size() != 0:
 		_change_texture()
 	else:
-		print("[INFO] Image pool exhausted - reloading stimuli for the current block")
+		_log("Image pool exhausted - reloading stimuli for the current block")
 		start_block_images()
 		_change_texture()
 # ==================================================================================================
@@ -274,7 +256,6 @@ func push_answers():
 # 											User interaction
 # --------------------------------------------------------------------------------------------------
 func _on_start_press():
-	print("[INFO] Objects block started")
 	task_start_timestamps = Time.get_unix_time_from_system()
 	_log("Task started at unix time %s - beginning block 1 (objects)" % str(task_start_timestamps))
 	start_block_timer()
@@ -288,9 +269,8 @@ func _on_start_press():
 func _input(_event):
 	# Esc to Exit Program
 	if Input.is_action_pressed("ui_cancel"):
-		print("[INFO] Quit requested (ui_cancel)")
+		_log("Quit requested (ui_cancel)")
 		get_tree().quit()
-	# Enter or Space to move to next image
 	if Input.is_action_pressed("ui_accept"):
 		if not rsp_freeze:
 			_log("Response accepted (ui_accept)")
@@ -299,9 +279,8 @@ func _input(_event):
 			save(answers)
 			image_presentation_timer.stop()
 			change_texture()
-	# tab to go back to the menu
 	if Input.is_action_pressed("ui_focus_next"):
-		print("[INFO] Manual return to menu (ui_focus_next)")
+		_log("Manual return to menu (ui_focus_next)")
 		image_presentation_timer.stop()
 		block_timer.stop()
 		hide_interblock()
