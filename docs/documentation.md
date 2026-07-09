@@ -1,6 +1,6 @@
 # Stimulus Task Script — Explained
 
-`stimulus_task.gd` runs a two-block image-naming task: participants see a
+`stimuli_presentation.gd` runs a two-block image-naming task: participants see a
 picture and respond before a timer runs out. Block 1 shows **objects**,
 block 2 shows **actions**, separated by an inter-block rest interval.
 
@@ -49,7 +49,7 @@ main menu → [start_button] → BLOCK 1 (objects)
    scored a success, the trial is saved, and the next trial starts
    immediately.
 4. When `image_paths` runs out, `change_texture()` reloads the pool from
-   disk via `start_block_images()` before continuing.
+   disk via `start_block_images()` before continuing (repeating the same images).
 
 ## Timers
 
@@ -64,10 +64,10 @@ main menu → [start_button] → BLOCK 1 (objects)
 Images live under:
 
 ```
-<image_folder>/<difficulty_index>/<objects|actions>/
+/imagens/<difficulty_index>/<objects|actions>/
 ```
 
-`difficulty_index` comes from the option button's `selected` property.
+`difficulty_index` comes from the option button's `selected` property. It can be 0 (easy), 1 (medium) or 2 (difficult)
 `get_dir_contents()` recursively walks that folder (via `DirAccess`,
 skipping `.import` files) and returns every file path found; `_add_dir_contents()`
 is the recursive helper, since Godot's directory iterator only walks one
@@ -112,8 +112,8 @@ dead code — worth checking before removing it.
 
 ## Input actions used
 
-- `ui_cancel` — quit the application
-- `ui_accept` — register a response (during a trial)
-- `ui_focus_next` — abort the current block and return to the main menu
+- `ui_cancel` — Esc — quit the application
+- `ui_accept` — Enter/Space — register a response (during a trial)
+- `ui_focus_next` — Tab — abort the current block and return to the main menu
 
-These must be mapped in **Project Settings → Input Map**.
+These are mapped in **Project Settings → Input Map**.
