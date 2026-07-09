@@ -1,0 +1,187 @@
+[gd_scene load_steps=18 format=2]
+
+[ext_resource path="res://fonts/bold.TTF" type="DynamicFontData" id=1]
+[ext_resource path="res://fonts/normal.TTF" type="DynamicFontData" id=2]
+[ext_resource path="res://imagens/cf_logo.png" type="Texture" id=3]
+[ext_resource path="res://scripts/stimuli_presentation.gd" type="Script" id=4]
+[ext_resource path="res://imagens/stimuli/0/actions/act009fly.jpg" type="Texture" id=5]
+
+[sub_resource type="Gradient" id=1]
+offsets = PoolRealArray( 0.632653 )
+colors = PoolColorArray( 0.805664, 0.794796, 0.794796, 1 )
+
+[sub_resource type="GradientTexture" id=2]
+gradient = SubResource( 1 )
+
+[sub_resource type="DynamicFont" id=3]
+size = 33
+font_data = ExtResource( 2 )
+
+[sub_resource type="DynamicFont" id=4]
+size = 28
+font_data = ExtResource( 2 )
+
+[sub_resource type="DynamicFont" id=5]
+size = 45
+font_data = ExtResource( 1 )
+
+[sub_resource type="DynamicFont" id=6]
+size = 40
+outline_color = Color( 0.337255, 0.286275, 0.286275, 1 )
+font_data = ExtResource( 2 )
+
+[sub_resource type="StyleBoxFlat" id=11]
+bg_color = Color( 0.6, 0.6, 0.6, 0 )
+border_color = Color( 0.8, 0.8, 0.8, 0 )
+
+[sub_resource type="StyleBoxFlat" id=12]
+bg_color = Color( 0.6, 0.6, 0.6, 0 )
+border_color = Color( 0.8, 0.8, 0.8, 0 )
+
+[sub_resource type="StyleBoxFlat" id=10]
+content_margin_left = 15.0
+content_margin_right = 15.0
+content_margin_top = 15.0
+content_margin_bottom = 15.0
+bg_color = Color( 0.6, 0.6, 0.6, 0 )
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_color = Color( 0.8, 0.8, 0.8, 0 )
+border_blend = true
+shadow_color = Color( 0, 0, 0, 0 )
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id=7]
+content_margin_left = 15.0
+content_margin_right = 15.0
+content_margin_top = 15.0
+content_margin_bottom = 15.0
+bg_color = Color( 0.454902, 0.298039, 0.298039, 0 )
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_color = Color( 0.286275, 0.231373, 0.231373, 0 )
+border_blend = true
+shadow_color = Color( 0, 0, 0, 0 )
+shadow_size = 4
+
+[sub_resource type="DynamicFont" id=8]
+size = 30
+font_data = ExtResource( 2 )
+
+[sub_resource type="StyleBoxEmpty" id=9]
+content_margin_left = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+
+[node name="main" type="Node2D"]
+__meta__ = {
+"_edit_vertical_guides_": [ 512.0 ]
+}
+
+[node name="bg" type="Sprite" parent="."]
+position = Vector2( 512, 300 )
+scale = Vector2( 0.507813, 616 )
+texture = SubResource( 2 )
+
+[node name="main_menu" type="VBoxContainer" parent="."]
+margin_left = 296.0
+margin_top = 288.0
+margin_right = 729.0
+margin_bottom = 446.0
+custom_constants/separation = 41
+alignment = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="difficulty_hbox" type="HBoxContainer" parent="main_menu"]
+margin_top = 9.0
+margin_right = 436.0
+margin_bottom = 49.0
+alignment = 1
+
+[node name="label" type="Label" parent="main_menu/difficulty_hbox"]
+margin_right = 280.0
+margin_bottom = 39.0
+custom_fonts/font = SubResource( 3 )
+text = "Selecione a tarefa:"
+align = 2
+valign = 1
+
+[node name="option_button" type="OptionButton" parent="main_menu/difficulty_hbox"]
+margin_left = 284.0
+margin_right = 436.0
+margin_bottom = 40.0
+rect_min_size = Vector2( 152, 40 )
+custom_fonts/font = SubResource( 4 )
+text = "1"
+align = 1
+items = [ "1", null, false, 0, null, "2", null, false, 1, null, "3", null, false, 2, null ]
+selected = 0
+
+[node name="start_button" type="Button" parent="main_menu"]
+margin_top = 90.0
+margin_right = 436.0
+margin_bottom = 149.0
+custom_fonts/font = SubResource( 5 )
+text = "Começar"
+
+[node name="cf_logo" type="Sprite" parent="main_menu"]
+position = Vector2( 216, -120 )
+scale = Vector2( 0.230293, 0.230293 )
+texture = ExtResource( 3 )
+
+[node name="stimuli_presentation" type="Node2D" parent="."]
+visible = false
+script = ExtResource( 4 )
+
+[node name="Sprite" type="Sprite" parent="stimuli_presentation"]
+position = Vector2( 512, 296 )
+scale = Vector2( 1.8, 1.8 )
+texture = ExtResource( 5 )
+
+[node name="inter_block_int" type="Node2D" parent="."]
+visible = false
+
+[node name="vbox" type="VBoxContainer" parent="inter_block_int"]
+margin_left = 224.0
+margin_top = 264.0
+margin_right = 796.0
+margin_bottom = 365.0
+custom_constants/separation = 5
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="advance_button" type="Button" parent="inter_block_int/vbox"]
+margin_right = 572.0
+margin_bottom = 77.0
+rect_min_size = Vector2( 572, 77 )
+custom_colors/font_color_disabled = Color( 0.207843, 0.176471, 0.176471, 1 )
+custom_colors/font_color_focus = Color( 0.207843, 0.176471, 0.176471, 1 )
+custom_colors/font_color = Color( 0.207843, 0.176471, 0.176471, 1 )
+custom_colors/font_color_hover = Color( 0.207843, 0.176471, 0.176471, 1 )
+custom_colors/font_color_pressed = Color( 0.207843, 0.176471, 0.176471, 1 )
+custom_fonts/font = SubResource( 6 )
+custom_styles/hover = SubResource( 11 )
+custom_styles/focus = SubResource( 12 )
+custom_styles/disabled = SubResource( 10 )
+custom_styles/normal = SubResource( 7 )
+disabled = true
+text = "Próximo bloco"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="inter_block_int/vbox"]
+margin_top = 82.0
+margin_right = 572.0
+margin_bottom = 123.0
+custom_colors/font_color = Color( 0.207843, 0.176471, 0.176471, 1 )
+custom_fonts/font = SubResource( 8 )
+custom_styles/normal = SubResource( 9 )
+text = "(Ações)"
+align = 1
+valign = 1
