@@ -34,7 +34,7 @@ var success = true
 var rsp_freeze_time = 0.5                  # time in s
 var image_presentation_max_duration = 20   # time in s
 var interblock_time = 20                   # time in s
-var block_duration = 1                     # time in min
+var block_duration = 10                    # time in min
 var rsp_freeze = true       # true = ignore input (freeze period after image appears)
 var block1 = true           # true = block 1 (objects), false = block 2 (actions)
 var interblock_timer: Timer
